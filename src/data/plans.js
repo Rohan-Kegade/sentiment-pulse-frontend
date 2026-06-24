@@ -1,0 +1,47 @@
+export const PLANS = [
+  {
+    id: "free",
+    name: "Free",
+    monthly: 0,
+    annual: 0,
+    responses: "100 responses / mo",
+    blurb: "Validate your first feedback loop.",
+    features: [
+      "1 active survey",
+      "Basic sentiment tagging",
+      "QR code generation",
+      "Community support",
+    ],
+  },
+  {
+    id: "pro",
+    name: "Pro",
+    monthly: 79,
+    annual: 63,
+    responses: "5,000 responses / mo",
+    blurb: "For teams shipping weekly.",
+    features: [
+      "Unlimited surveys",
+      "Real-time AI sentiment feed",
+      "Category auto-tagging",
+      "CSV + API export",
+      "Priority support",
+    ],
+    highlight: true,
+  },
+  {
+    id: "enterprise",
+    name: "Enterprise",
+    monthly: 249,
+    annual: 199,
+    responses: "Unlimited responses",
+    blurb: "For multi-region, multi-brand orgs.",
+    features: [
+      "Unlimited everything",
+      "Multi-tenant workspace roles",
+      "SSO + audit logs",
+      "Dedicated ingestion queue",
+      "White-labeled survey links",
+    ],
+  },
+];
