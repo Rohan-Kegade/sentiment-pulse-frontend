@@ -7,63 +7,119 @@ import DashboardView from "./views/DashboardView";
 import BuilderView from "./views/BuilderView";
 import PublicSurveyView from "./views/PublicSurveyView";
 
-import SessionBanner from "./components/layout/SessionBanner";
-
+import { SEED_WORKSPACES } from "./data/workspaces";
 import { SEED_SURVEYS } from "./data/surveys";
 import { SEED_FEEDBACK } from "./data/feedback";
 
 import { fontStyles } from "./styles/fonts";
 
+const AVATAR_COLORS = ["indigo", "teal", "amber", "rose", "violet"];
+
 export default function App() {
   const [view, setView] = useState("landing");
   const [selectedPlan, setSelectedPlan] = useState("pro");
-
   const [user, setUser] = useState(null);
 
-  const [tenant, setTenant] = useState({
-    id: "t_demo",
-    name: "Northwind Retail Co.",
-    slug: "northwind",
-    plan: "free",
-  });
+  const [userPlan, setUserPlan] = useState("pro");
+
+  const [workspaces, setWorkspaces] = useState(SEED_WORKSPACES);
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState(SEED_WORKSPACES[0].id);
+  const activeWorkspace =
+    workspaces.find((w) => w.id === activeWorkspaceId) ?? workspaces[0];
 
   const [surveys, setSurveys] = useState(SEED_SURVEYS);
   const [feedback] = useState(SEED_FEEDBACK);
   const [previewSurvey, setPreviewSurvey] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [editingSurvey, setEditingSurvey] = useState(null);
 
+  // Navigating away from the builder always clears the editing context
   const go = useCallback((next, payload = {}) => {
-    if (payload.selectedPlan) {
-      setSelectedPlan(payload.selectedPlan);
-    }
-
+    if (payload.selectedPlan) setSelectedPlan(payload.selectedPlan);
+    if (next !== "builder") setEditingSurvey(null);
     setView(next);
   }, []);
 
   const handleAuth = ({ name, email, tenantName }) => {
     setUser({ id: "u_1", name, email, role: "admin" });
-    setTenant((t) => ({ ...t, name: tenantName }));
+    if (tenantName) {
+      const id = "ws_" + Date.now();
+      setWorkspaces([
+        {
+          id,
+          name: tenantName,
+          slug: tenantName.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+          createdAt: new Date().toISOString().slice(0, 10),
+        },
+      ]);
+      setActiveWorkspaceId(id);
+      setSurveys([]);
+      setUserPlan("free");
+    }
     setView("dashboard");
   };
 
   const handleLogout = () => {
     setUser(null);
+    setWorkspaces(SEED_WORKSPACES);
+    setActiveWorkspaceId(SEED_WORKSPACES[0].id);
+    setSurveys(SEED_SURVEYS);
+    setUserPlan("pro");
+    setEditingSurvey(null);
     setView("landing");
   };
 
-  const handleSubscribed = (planId) => {
-    setTenant((t) => ({ ...t, plan: planId }));
+  const handleSubscribed = (planId) => setUserPlan(planId);
+
+  // Survey already has workspaceId set by BuilderView before calling this
+  const handleDeploy = (survey) => setSurveys((prev) => [survey, ...prev]);
+
+  const handleUpdateSurvey = (id, patch) =>
+    setSurveys((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)));
+
+  const handleDeleteSurvey = (id) =>
+    setSurveys((prev) => prev.filter((s) => s.id !== id));
+
+  const handleEditSurveyInBuilder = (survey) => {
+    setEditingSurvey(survey);
+    setView("builder");
   };
 
-  const handleDeploy = (survey) => {
-    setSurveys((s) => [survey, ...s]);
+  const handleSwitchWorkspace = (id) => setActiveWorkspaceId(id);
+
+  const handleCreateWorkspace = ({ name }) => {
+    const id = "ws_" + Date.now();
+    const colorIdx = workspaces.length % AVATAR_COLORS.length;
+    setWorkspaces((prev) => [
+      ...prev,
+      {
+        id,
+        name,
+        slug: name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+        createdAt: new Date().toISOString().slice(0, 10),
+        color: AVATAR_COLORS[colorIdx],
+      },
+    ]);
+    setActiveWorkspaceId(id);
   };
 
-  const protectedDashboardProps = {
-    go,
-    tenant,
-    surveys,
-    feedback,
+  const handleDeleteWorkspace = (id) => {
+    const remaining = workspaces.filter((w) => w.id !== id);
+    if (remaining.length === 0) return;
+    setWorkspaces(remaining);
+    setSurveys((prev) => prev.filter((s) => s.workspaceId !== id));
+    if (activeWorkspaceId === id) setActiveWorkspaceId(remaining[0].id);
+  };
+
+  const workspaceProps = {
+    user,
+    onLogout: handleLogout,
+    workspaces,
+    activeWorkspace,
+    onSwitchWorkspace: handleSwitchWorkspace,
+    onCreateWorkspace: handleCreateWorkspace,
+    onDeleteWorkspace: handleDeleteWorkspace,
+    userPlan,
     mobileOpen,
     setMobileOpen,
   };
@@ -72,63 +128,55 @@ export default function App() {
     <div className="sp-root">
       <style>{fontStyles}</style>
 
-      {user && (view === "dashboard" || view === "builder") ? (
-        <SessionBanner user={user} tenant={tenant} onLogout={handleLogout} />
-      ) : null}
-
       {view === "landing" && <LandingView go={go} />}
-      {view === "login" && (
-        <AuthView mode="login" go={go} onAuth={handleAuth} />
-      )}
-      {view === "register" && (
-        <AuthView mode="register" go={go} onAuth={handleAuth} />
-      )}
+      {view === "login" && <AuthView mode="login" go={go} onAuth={handleAuth} />}
+      {view === "register" && <AuthView mode="register" go={go} onAuth={handleAuth} />}
       {view === "checkout" && (
-        <CheckoutView
+        <CheckoutView go={go} plan={selectedPlan} onSubscribed={handleSubscribed} />
+      )}
+      {view === "dashboard" && (
+        <DashboardView
           go={go}
-          plan={selectedPlan}
-          onSubscribed={handleSubscribed}
+          surveys={surveys}
+          feedback={feedback}
+          onDeleteSurvey={handleDeleteSurvey}
+          onEditSurveyInBuilder={handleEditSurveyInBuilder}
+          {...workspaceProps}
         />
       )}
-      {view === "dashboard" && <DashboardView {...protectedDashboardProps} />}
       {view === "builder" && (
         <BuilderView
           go={go}
-          tenant={tenant}
+          surveys={surveys}
           onDeploy={handleDeploy}
-          mobileOpen={mobileOpen}
-          setMobileOpen={setMobileOpen}
+          onUpdateSurvey={handleUpdateSurvey}
+          editingSurvey={editingSurvey}
+          {...workspaceProps}
         />
       )}
       {view === "public-survey" && (
         <PublicSurveyView go={go} survey={previewSurvey || surveys[0]} />
       )}
 
-      {/* Floating dev-only view switcher so every view is reachable without a real router */}
+      {/* Dev-only view switcher */}
       <div className="fixed bottom-4 right-4 z-50 hidden rounded-xl border border-slate-200 bg-white/95 p-2 text-xs shadow-lg backdrop-blur sm:flex sm:flex-col sm:gap-1">
-        <span className="px-2 pb-1 font-semibold text-slate-400">
-          Dev view jump
-        </span>
-        {[
-          "landing",
-          "login",
-          "register",
-          "checkout",
-          "dashboard",
-          "builder",
-          "public-survey",
-        ].map((v) => (
-          <button
-            key={v}
-            onClick={() => {
-              setPreviewSurvey(surveys[0]);
-              go(v);
-            }}
-            className={`rounded-lg px-2 py-1 text-left transition-colors ${view === v ? "bg-indigo-50 text-indigo-700" : "text-slate-500 hover:bg-slate-50"}`}
-          >
-            {v}
-          </button>
-        ))}
+        <span className="px-2 pb-1 font-semibold text-slate-400">Dev view jump</span>
+        {["landing", "login", "register", "checkout", "dashboard", "builder", "public-survey"].map(
+          (v) => (
+            <button
+              key={v}
+              onClick={() => {
+                setPreviewSurvey(surveys[0]);
+                go(v);
+              }}
+              className={`rounded-lg px-2 py-1 text-left transition-colors ${
+                view === v ? "bg-indigo-50 text-indigo-700" : "text-slate-500 hover:bg-slate-50"
+              }`}
+            >
+              {v}
+            </button>
+          ),
+        )}
       </div>
     </div>
   );

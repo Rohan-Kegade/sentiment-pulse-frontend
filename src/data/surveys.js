@@ -1,6 +1,7 @@
 export const SEED_SURVEYS = [
   {
     id: "srv_01",
+    workspaceId: "ws_01",
     title: "Q3 Checkout Experience",
     description: "Understand friction in the post-purchase flow.",
     submissions: 1842,
@@ -23,6 +24,7 @@ export const SEED_SURVEYS = [
   },
   {
     id: "srv_02",
+    workspaceId: "ws_01",
     title: "Support Ticket Follow-up",
     description: "Closed-ticket satisfaction pulse.",
     submissions: 963,
@@ -45,6 +47,7 @@ export const SEED_SURVEYS = [
   },
   {
     id: "srv_03",
+    workspaceId: "ws_02",
     title: "Onboarding Day 7 Pulse",
     description: "Sentiment one week after signup.",
     submissions: 421,
