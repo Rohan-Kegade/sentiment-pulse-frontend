@@ -13,9 +13,20 @@ export default function CheckoutView({ go, plan, onSubscribed }) {
     expiry: "",
     cvv: "",
   });
+  const [errors, setErrors] = useState({});
 
   const submit = (e) => {
     e.preventDefault();
+    const next = {};
+    if (!card.name.trim()) next.name = "Cardholder name is required.";
+    if (!/^\d{13,19}$/.test(card.number.replace(/\s/g, "")))
+      next.number = "Enter a valid card number.";
+    if (!/^\d{2}\/\d{2}$/.test(card.expiry.trim()))
+      next.expiry = "Use MM / YY format.";
+    if (!/^\d{3,4}$/.test(card.cvv.trim()))
+      next.cvv = "Enter a 3–4 digit CVV.";
+    setErrors(next);
+    if (Object.keys(next).length > 0) return;
     setStage("processing");
     setTimeout(() => {
       setStage("success");
@@ -51,6 +62,7 @@ export default function CheckoutView({ go, plan, onSubscribed }) {
                   value={card.name}
                   onChange={(e) => setCard({ ...card, name: e.target.value })}
                   placeholder="Avery Chen"
+                  error={errors.name}
                 />
                 <TextField
                   label="Card number"
@@ -58,6 +70,7 @@ export default function CheckoutView({ go, plan, onSubscribed }) {
                   value={card.number}
                   onChange={(e) => setCard({ ...card, number: e.target.value })}
                   placeholder="4242 4242 4242 4242"
+                  error={errors.number}
                 />
                 <div className="grid grid-cols-2 gap-4">
                   <TextField
@@ -67,6 +80,7 @@ export default function CheckoutView({ go, plan, onSubscribed }) {
                       setCard({ ...card, expiry: e.target.value })
                     }
                     placeholder="MM / YY"
+                    error={errors.expiry}
                   />
                   <TextField
                     label="CVV"
@@ -74,6 +88,7 @@ export default function CheckoutView({ go, plan, onSubscribed }) {
                     value={card.cvv}
                     onChange={(e) => setCard({ ...card, cvv: e.target.value })}
                     placeholder="123"
+                    error={errors.cvv}
                   />
                 </div>
                 <PrimaryButton

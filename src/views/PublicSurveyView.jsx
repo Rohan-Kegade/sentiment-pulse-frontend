@@ -1,8 +1,9 @@
-import { ArrowLeft, Info, Mail, Send } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Info, Loader2, Mail, Send } from "lucide-react";
 import { useState } from "react";
 import TextField from "../components/common/TextField";
 import FieldLabel from "../components/common/FieldLabel";
 import PrimaryButton from "../components/common/PrimaryButton";
+import { SEED_SURVEYS } from "../data/surveys";
 
 export default function PublicSurveyView({ go, survey }) {
   const s = survey || SEED_SURVEYS[0];
@@ -10,12 +11,20 @@ export default function PublicSurveyView({ go, survey }) {
   const [answer, setAnswer] = useState("");
   const [choice, setChoice] = useState("");
   const [stage, setStage] = useState("form"); // form | submitting | done
+  const [errors, setErrors] = useState({});
 
   const choiceQ = s.questions.find((q) => q.type === "choice");
   const textQ = s.questions.find((q) => q.type === "text");
 
   const submit = (e) => {
     e.preventDefault();
+    const next = {};
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      next.email = "Enter a valid email address.";
+    if (choiceQ && !choice)
+      next.choice = "Please select an option.";
+    setErrors(next);
+    if (Object.keys(next).length > 0) return;
     setStage("submitting");
     setTimeout(() => setStage("done"), 1300);
   };
@@ -46,6 +55,7 @@ export default function PublicSurveyView({ go, survey }) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@email.com"
+                  error={errors.email}
                 />
 
                 {choiceQ ? (
@@ -66,6 +76,9 @@ export default function PublicSurveyView({ go, survey }) {
                         </button>
                       ))}
                     </div>
+                    {errors.choice ? (
+                      <p className="mt-1 text-xs font-medium text-rose-500">{errors.choice}</p>
+                    ) : null}
                   </div>
                 ) : null}
 

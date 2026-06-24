@@ -17,9 +17,9 @@ export default function DashboardView({
   mobileOpen,
 }) {
   const [qrSurvey, setQrSurvey] = useState(null);
-  const avgScore = Math.round(
-    feedback.reduce((a, f) => a + f.score, 0) / feedback.length,
-  );
+  const avgScore = feedback.length
+    ? Math.round(feedback.reduce((a, f) => a + f.score, 0) / feedback.length)
+    : 0;
   const totalResponses = surveys.reduce((a, s) => a + s.submissions, 0);
   const activeSurveys = surveys.filter((s) => s.status === "live").length;
 
