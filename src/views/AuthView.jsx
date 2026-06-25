@@ -146,7 +146,7 @@ export default function AuthView({ mode, go, onAuth }) {
         {/* Logo — above the card, centered */}
         <div className="mb-6 flex justify-center">
           <button onClick={() => go("landing")}>
-            <Logo />
+            <Logo light />
           </button>
         </div>
 

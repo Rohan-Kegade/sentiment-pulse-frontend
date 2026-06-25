@@ -1,6 +1,6 @@
 import { Gauge } from "lucide-react";
 
-export default function Logo({ size = "md" }) {
+export default function Logo({ size = "md", light = false }) {
   const dims = size === "sm" ? "h-6 w-6" : "h-8 w-8";
   const text = size === "sm" ? "text-base" : "text-xl";
 
@@ -12,7 +12,7 @@ export default function Logo({ size = "md" }) {
         <Gauge className="text-white" size={size === "sm" ? 14 : 18} />
       </div>
 
-      <span className={`sp-display font-semibold ${text} text-slate-900 dark:text-white`}>
+      <span className={`sp-display font-semibold ${text} text-slate-900 ${!light && "dark:text-white"}`}>
         SentimentPulse
       </span>
     </div>
