@@ -3,7 +3,6 @@ import Logo from "../components/common/Logo";
 import {
   ArrowLeft,
   ArrowRight,
-  Building2,
   Eye,
   EyeOff,
   Loader2,
@@ -92,7 +91,7 @@ export default function AuthView({ mode, go, onAuth }) {
 
   const [showPw, setShowPw]   = useState(false);
   const [loading, setLoading] = useState(false);
-  const [form, setForm]       = useState({ org: "", name: "", email: "", password: "" });
+  const [form, setForm]       = useState({ name: "", email: "", password: "" });
   const [errors, setErrors]   = useState({});
 
   const update = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -100,8 +99,6 @@ export default function AuthView({ mode, go, onAuth }) {
   const submit = async (e) => {
     e.preventDefault();
     const next = {};
-    if (isRegister && !form.org.trim())
-      next.org = "Organization name is required.";
     if (isRegister && !form.name.trim())
       next.name = "Your full name is required.";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
@@ -117,7 +114,7 @@ export default function AuthView({ mode, go, onAuth }) {
         name: form.name || form.email.split("@")[0],
         email: form.email,
         password: form.password,
-        tenantName: isRegister ? form.org : undefined,
+        isRegister,
       });
     } catch (err) {
       setErrors({ submit: err.message || "Something went wrong. Please try again." });
@@ -197,19 +194,6 @@ export default function AuthView({ mode, go, onAuth }) {
           {/* Form */}
           <form onSubmit={submit} noValidate className="space-y-4">
             {isRegister && (
-              <Field label="Company or organization" error={errors.org}>
-                <Input
-                  icon={Building2}
-                  error={errors.org}
-                  value={form.org}
-                  onChange={update("org")}
-                  placeholder="Northwind Retail Co."
-                  autoComplete="organization"
-                />
-              </Field>
-            )}
-
-            {isRegister && (
               <Field label="Full name" error={errors.name}>
                 <Input
                   icon={User}
@@ -222,14 +206,14 @@ export default function AuthView({ mode, go, onAuth }) {
               </Field>
             )}
 
-            <Field label="Work email" error={errors.email}>
+            <Field label="Email" error={errors.email}>
               <Input
                 icon={Mail}
                 type="email"
                 error={errors.email}
                 value={form.email}
                 onChange={update("email")}
-                placeholder="you@company.com"
+                placeholder="you@example.com"
                 autoComplete="email"
               />
             </Field>

@@ -1,7 +1,7 @@
 import { api, setToken } from "./client";
 
-export async function register({ name, email, password, tenantName }) {
-  const data = await api.post("/auth/register", { name, email, password, tenantName });
+export async function register({ name, email, password }) {
+  const data = await api.post("/auth/register", { name, email, password });
   setToken(data.token);
   return data;
 }
@@ -22,4 +22,8 @@ export async function fetchMe() {
 
 export async function updateProfile(patch) {
   return api.patch("/auth/me", patch);
+}
+
+export async function deleteAccount() {
+  return api.delete("/auth/me");
 }

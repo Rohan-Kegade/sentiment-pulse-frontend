@@ -463,6 +463,7 @@ export default function BuilderView({
   onInviteMember,
   onUpdateMember,
   onRemoveMember,
+  onDeleteAccount,
 }) {
   const { t } = useLanguage();
   const isEditing = !!editingSurvey;
@@ -602,6 +603,7 @@ export default function BuilderView({
         onInviteMember={onInviteMember}
         onUpdateMember={onUpdateMember}
         onRemoveMember={onRemoveMember}
+        onDeleteAccount={onDeleteAccount}
       />
 
       <div className="flex flex-1 min-w-0 flex-col overflow-hidden">

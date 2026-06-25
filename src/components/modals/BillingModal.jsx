@@ -11,30 +11,48 @@ const MOCK_INVOICES = [
 
 function UsageStat({ label, used, cap }) {
   const unlimited = cap === null;
-  const pct = !unlimited && used !== null ? Math.min((used / cap) * 100, 100) : null;
+  const pct = !unlimited && used != null ? Math.min((used / cap) * 100, 100) : null;
+  const barColor =
+    pct === null   ? "bg-indigo-500"
+    : pct >= 100   ? "bg-rose-500"
+    : pct >= 80    ? "bg-amber-500"
+    : "bg-indigo-500";
 
   return (
-    <div>
+    <div className="rounded-xl border border-white/60 bg-white/40 p-3 dark:border-slate-700/60 dark:bg-slate-800/40">
       <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">{label}</p>
-      <p className="mt-0.5 text-sm font-bold text-slate-800 dark:text-slate-200">
-        {unlimited ? "∞" : used !== null ? `${used} / ${cap}` : limitLabel(cap)}
-      </p>
-      {pct !== null && (
-        <div className="mt-1.5 h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-700">
-          <div
-            className={`h-1.5 rounded-full transition-all ${pct > 80 ? "bg-rose-500" : "bg-indigo-500"}`}
-            style={{ width: `${pct}%` }}
-          />
-        </div>
+      <div className="mt-1 flex items-baseline gap-1">
+        <span className="text-lg font-bold text-slate-800 dark:text-slate-200">
+          {used != null ? used.toLocaleString() : "—"}
+        </span>
+        {!unlimited && cap != null && (
+          <span className="text-xs text-slate-400 dark:text-slate-500">/ {cap.toLocaleString()}</span>
+        )}
+        {unlimited && (
+          <span className="text-xs text-slate-400 dark:text-slate-500">/ ∞</span>
+        )}
+      </div>
+      <div className="mt-2 h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-700">
+        <div
+          className={`h-1.5 rounded-full transition-all duration-500 ${barColor}`}
+          style={{ width: pct != null ? `${pct}%` : unlimited ? "0%" : "100%" }}
+        />
+      </div>
+      {pct != null && (
+        <p className={`mt-1 text-[10px] font-medium ${pct >= 100 ? "text-rose-500" : pct >= 80 ? "text-amber-500" : "text-slate-400"}`}>
+          {pct >= 100 ? "Limit reached" : `${Math.round(pct)}% used`}
+        </p>
       )}
     </div>
   );
 }
 
-export default function BillingModal({ user, userPlan, workspaces, go, onClose }) {
+export default function BillingModal({ user, userPlan, workspaces, surveys = [], members = [], go, onClose }) {
   const [billing, setBilling] = useState("monthly");
   const currentPlan = getPlan(userPlan);
   const currentIdx  = PLANS.findIndex((p) => p.id === userPlan);
+
+  const totalResponses = surveys.reduce((sum, s) => sum + (s.submissions ?? 0), 0);
 
   return (
     <div
@@ -75,21 +93,26 @@ export default function BillingModal({ user, userPlan, workspaces, go, onClose }
                   {currentPlan.name.toUpperCase()}
                 </span>
               </div>
-              <div className="mt-4 grid grid-cols-3 gap-4 border-t border-indigo-100/60 pt-4 dark:border-indigo-800/30">
+              <div className="mt-4 grid grid-cols-2 gap-3 border-t border-indigo-100/60 pt-4 dark:border-indigo-800/30">
                 <UsageStat
                   label="Workspaces"
                   used={workspaces.length}
                   cap={currentPlan.limits.workspaces}
                 />
                 <UsageStat
-                  label="Surveys / workspace"
-                  used={null}
+                  label="Surveys"
+                  used={surveys.length}
                   cap={currentPlan.limits.surveys}
                 />
                 <UsageStat
-                  label="Responses / mo"
-                  used={null}
+                  label="Responses"
+                  used={totalResponses}
                   cap={currentPlan.limits.responses}
+                />
+                <UsageStat
+                  label="Team members"
+                  used={members.length}
+                  cap={currentPlan.limits.members}
                 />
               </div>
             </div>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Camera, Check, Mail, Shield, User, X } from "lucide-react";
+import { AlertTriangle, Camera, Check, Mail, Shield, Trash2, User, X } from "lucide-react";
 
 const COLOR_OPTIONS = [
   { key: "indigo", bg: "bg-indigo-600",  ring: "ring-indigo-400" },
@@ -14,12 +14,14 @@ function userInitials(name = "") {
   return name.split(/\s+/).slice(0, 2).map((w) => w[0] ?? "").join("").toUpperCase() || "?";
 }
 
-export default function ProfileModal({ user, onSave, onClose }) {
+export default function ProfileModal({ user, onSave, onClose, onDeleteAccount }) {
   const [name, setName]               = useState(user?.name ?? "");
   const [email, setEmail]             = useState(user?.email ?? "");
   const [avatarColor, setAvatarColor] = useState(user?.avatarColor ?? "indigo");
   const [nameError, setNameError]     = useState("");
   const [saved, setSaved]             = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteInput, setDeleteInput]     = useState("");
 
   const colorBg = COLOR_OPTIONS.find((c) => c.key === avatarColor)?.bg ?? "bg-indigo-600";
 
@@ -161,6 +163,65 @@ export default function ProfileModal({ user, onSave, onClose }) {
               {saved ? <><Check size={14} /> Saved!</> : "Save changes"}
             </button>
           </div>
+
+          {/* Danger zone */}
+          {onDeleteAccount && (
+            <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-800/50 dark:bg-rose-950/20">
+              <div className="flex items-center gap-2 mb-3">
+                <AlertTriangle size={14} className="text-rose-500 shrink-0" />
+                <p className="text-xs font-semibold text-rose-700 dark:text-rose-400">Danger zone</p>
+              </div>
+
+              {!confirmDelete ? (
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-rose-600 dark:text-rose-400">
+                    Permanently delete your account and all data.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDelete(true)}
+                    className="ml-4 shrink-0 flex items-center gap-1.5 rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-xs font-semibold text-rose-600 transition-colors hover:bg-rose-600 hover:text-white dark:border-rose-700 dark:bg-transparent dark:hover:bg-rose-700"
+                  >
+                    <Trash2 size={12} /> Delete account
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-xs text-rose-700 dark:text-rose-300">
+                    This will permanently delete your account, all workspaces, surveys, and data.{" "}
+                    <strong>This cannot be undone.</strong>
+                  </p>
+                  <p className="text-xs font-medium text-rose-600 dark:text-rose-400">
+                    Type <span className="font-bold">DELETE</span> to confirm
+                  </p>
+                  <input
+                    type="text"
+                    value={deleteInput}
+                    onChange={(e) => setDeleteInput(e.target.value)}
+                    placeholder="DELETE"
+                    className="w-full rounded-lg border border-rose-300 bg-white px-3 py-2 text-sm font-mono text-rose-700 outline-none placeholder-rose-300 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 dark:border-rose-700 dark:bg-slate-900 dark:text-rose-300 dark:placeholder-rose-800"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => { setConfirmDelete(false); setDeleteInput(""); }}
+                      className="flex-1 rounded-lg border border-rose-200 py-2 text-xs font-medium text-rose-600 transition-colors hover:bg-rose-100 dark:border-rose-800 dark:hover:bg-rose-950/40"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      disabled={deleteInput !== "DELETE"}
+                      onClick={onDeleteAccount}
+                      className="flex-1 rounded-lg bg-rose-600 py-2 text-xs font-semibold text-white transition-colors hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Permanently delete
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </form>
       </div>
     </div>

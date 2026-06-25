@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Bell,
   Check,
@@ -11,6 +11,7 @@ import {
   Monitor,
   Moon,
   MoreHorizontal,
+  Pencil,
   Plus,
   Settings,
   Sun,
@@ -76,10 +77,12 @@ export default function Sidebar({
   user,
   onLogout,
   onUpdateUser,
+  onDeleteAccount,
   workspaces,
   activeWorkspace,
   onSwitchWorkspace,
   onCreateWorkspace,
+  onRenameWorkspace,
   onDeleteWorkspace,
   userPlan,
   mobileOpen,
@@ -92,7 +95,20 @@ export default function Sidebar({
 }) {
   const [menuOpenId, setMenuOpenId]           = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [renamingId, setRenamingId]           = useState(null);
+  const [renameValue, setRenameValue]         = useState("");
+  const renameInputRef                        = useRef(null);
   const [showCreate, setShowCreate]           = useState(false);
+
+  useEffect(() => {
+    if (renamingId && renameInputRef.current) renameInputRef.current.focus();
+  }, [renamingId]);
+
+  const submitRename = (id) => {
+    const name = renameValue.trim();
+    if (name && onRenameWorkspace) onRenameWorkspace(id, name);
+    setRenamingId(null);
+  };
   const [userMenuOpen, setUserMenuOpen]       = useState(false);
   const [openSection, setOpenSection]         = useState(null);
   const [showProfile, setShowProfile]         = useState(false);
@@ -181,10 +197,13 @@ export default function Sidebar({
                 );
               }
 
+              const isRenaming = renamingId === ws.id;
+
               return (
                 <div key={ws.id} className="group relative">
                   <button
                     onClick={() => {
+                      if (isRenaming) return;
                       onSwitchWorkspace(ws.id);
                       go("dashboard");
                       setMobileOpen(false);
@@ -199,34 +218,53 @@ export default function Sidebar({
                     <div
                       className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[10px] font-bold ${color}`}
                     >
-                      {wsInitials(ws.name)}
+                      {wsInitials(isRenaming ? renameValue || ws.name : ws.name)}
                     </div>
-                    <span
-                      className={`min-w-0 flex-1 truncate text-sm font-medium ${
-                        isActive
-                          ? "text-indigo-700 dark:text-indigo-400"
-                          : "text-slate-700 dark:text-slate-300"
-                      }`}
-                    >
-                      {ws.name}
-                    </span>
-                    {isActive && (
+
+                    {isRenaming ? (
+                      <input
+                        ref={renameInputRef}
+                        value={renameValue}
+                        onChange={(e) => setRenameValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter")  { e.preventDefault(); submitRename(ws.id); }
+                          if (e.key === "Escape") { setRenamingId(null); }
+                        }}
+                        onBlur={() => submitRename(ws.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="min-w-0 flex-1 bg-transparent text-sm font-medium text-slate-800 outline-none border-b border-indigo-400 dark:text-slate-100"
+                      />
+                    ) : (
+                      <span
+                        className={`min-w-0 flex-1 truncate text-sm font-medium ${
+                          isActive
+                            ? "text-indigo-700 dark:text-indigo-400"
+                            : "text-slate-700 dark:text-slate-300"
+                        }`}
+                      >
+                        {ws.name}
+                      </span>
+                    )}
+
+                    {isActive && !isRenaming && (
                       <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-500" />
                     )}
                   </button>
 
-                  {/* Three-dot trigger */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setMenuOpenId(menuOpen ? null : ws.id);
-                    }}
-                    className={`absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-0.5 text-slate-400 transition-opacity hover:text-slate-600 dark:hover:text-slate-300 ${
-                      menuOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                    }`}
-                  >
-                    <MoreHorizontal size={14} />
-                  </button>
+                  {/* Three-dot trigger — hidden while renaming */}
+                  {!isRenaming && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMenuOpenId(menuOpen ? null : ws.id);
+                      }}
+                      className={`absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-0.5 text-slate-400 transition-opacity hover:text-slate-600 dark:hover:text-slate-300 ${
+                        menuOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                      }`}
+                    >
+                      <MoreHorizontal size={14} />
+                    </button>
+                  )}
 
                   {/* Dropdown */}
                   {menuOpen && (
@@ -236,6 +274,17 @@ export default function Sidebar({
                         onClick={() => setMenuOpenId(null)}
                       />
                       <div className="absolute right-2 top-10 z-50 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
+                        <button
+                          onClick={() => {
+                            setMenuOpenId(null);
+                            setRenamingId(ws.id);
+                            setRenameValue(ws.name);
+                          }}
+                          className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-700"
+                        >
+                          <Pencil size={13} /> Rename
+                        </button>
+                        <div className="border-t border-slate-100 dark:border-slate-700" />
                         {workspaces.length > 1 ? (
                           <button
                             onClick={() => {
@@ -504,6 +553,7 @@ export default function Sidebar({
             onUpdateUser?.(patch);
             setShowProfile(false);
           }}
+          onDeleteAccount={onDeleteAccount}
         />
       )}
 
@@ -512,6 +562,8 @@ export default function Sidebar({
           user={user}
           userPlan={userPlan}
           workspaces={workspaces}
+          surveys={surveys}
+          members={members}
           go={go}
           onClose={() => setShowBilling(false)}
         />

@@ -46,6 +46,7 @@ export default function App() {
       .then(({ user: u, workspaces: ws }) => {
         setUser(u);
         setWorkspaces(ws);
+        setUserPlan(u?.plan ?? "free");
         if (ws.length > 0) setActiveWorkspaceId(ws[0].id);
         setView("dashboard");
       })
@@ -78,11 +79,11 @@ export default function App() {
   }, []);
 
   // ── Auth ──────────────────────────────────────────────────────────────────
-  const handleAuth = async ({ name, email, password, tenantName }) => {
+  const handleAuth = async ({ name, email, password, isRegister }) => {
     try {
       let data;
-      if (tenantName) {
-        data = await authApi.register({ name, email, password, tenantName });
+      if (isRegister) {
+        data = await authApi.register({ name, email, password });
       } else {
         data = await authApi.login({ email, password });
       }
@@ -92,7 +93,7 @@ export default function App() {
       setSurveys([]);
       setFeedback([]);
       setMembers([]);
-      setUserPlan(tenantName ? "free" : "pro");
+      setUserPlan(data.user?.plan ?? "free");
       setView("dashboard");
     } catch (err) {
       throw err;
@@ -115,6 +116,11 @@ export default function App() {
   const handleUpdateUser = async (patch) => {
     setUser((u) => ({ ...u, ...patch }));
     await authApi.updateProfile(patch).catch(() => {});
+  };
+
+  const handleDeleteAccount = async () => {
+    await authApi.deleteAccount().catch(() => {});
+    handleLogout();
   };
 
   const handleSubscribed = (planId) => setUserPlan(planId);
@@ -140,6 +146,15 @@ export default function App() {
     } catch (err) {
       console.error("Create workspace failed:", err.message);
     }
+  };
+
+  const handleRenameWorkspace = async (id, name) => {
+    if (!name.trim()) return;
+    setWorkspaces((prev) => prev.map((w) => w.id === id ? { ...w, name: name.trim() } : w));
+    await workspaceApi.renameWorkspace(id, name.trim()).catch((err) => {
+      console.error("Rename workspace failed:", err.message);
+      workspaceApi.fetchWorkspaces().then(setWorkspaces).catch(() => {});
+    });
   };
 
   const handleDeleteWorkspace = async (id) => {
@@ -212,10 +227,12 @@ export default function App() {
     user,
     onLogout: handleLogout,
     onUpdateUser: handleUpdateUser,
+    onDeleteAccount: handleDeleteAccount,
     workspaces,
     activeWorkspace,
     onSwitchWorkspace: handleSwitchWorkspace,
     onCreateWorkspace: handleCreateWorkspace,
+    onRenameWorkspace: handleRenameWorkspace,
     onDeleteWorkspace: handleDeleteWorkspace,
     userPlan,
     mobileOpen,

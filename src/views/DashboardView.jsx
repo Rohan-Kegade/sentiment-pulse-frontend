@@ -343,6 +343,7 @@ export default function DashboardView({
   onInviteMember,
   onUpdateMember,
   onRemoveMember,
+  onDeleteAccount,
 }) {
   const { t } = useLanguage();
   const [selectedSurveyId, setSelectedSurveyId]       = useState(null);
@@ -387,7 +388,7 @@ export default function DashboardView({
   };
 
   const sidebarProps = {
-    active: "dashboard", go, user, onLogout, onUpdateUser, workspaces, activeWorkspace,
+    active: "dashboard", go, user, onLogout, onUpdateUser, onDeleteAccount, workspaces, activeWorkspace,
     onSwitchWorkspace, onCreateWorkspace, onDeleteWorkspace,
     userPlan, mobileOpen, setMobileOpen,
     members, surveys, onInviteMember, onUpdateMember, onRemoveMember,
