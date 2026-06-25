@@ -469,13 +469,15 @@ export default function BuilderView({
 
   const [title, setTitle]           = useState(editingSurvey?.title ?? "");
   const [description, setDesc]      = useState(editingSurvey?.description ?? "");
-  const [questions, setQuestions]   = useState(() =>
-    editingSurvey?.questions ?? [{ id: "q_1", type: "short_text", label: "", options: [] }],
-  );
+  const [questions, setQuestions]   = useState(() => {
+    if (editingSurvey?.questions) return editingSurvey.questions;
+    const id = crypto.randomUUID();
+    return [{ id, type: "short_text", label: "", options: [] }];
+  });
   const [deployed, setDeployed]     = useState(null);
   const [savedAsDraft, setSavedAsDraft] = useState(false);
   const [selectedId, setSelectedId] = useState(() =>
-    editingSurvey?.questions?.[0]?.id ?? "q_1",
+    editingSurvey?.questions?.[0]?.id ?? questions[0]?.id ?? null,
   );
 
   const planObj       = getPlan(userPlan);
@@ -489,9 +491,10 @@ export default function BuilderView({
 
   const addQuestion = (typeOrObj) => {
     const isObj  = typeof typeOrObj === "object";
+    const newId  = crypto.randomUUID();
     const newQ   = isObj
-      ? { ...typeOrObj, id: "q_" + Date.now() }
-      : { id: "q_" + Date.now(), type: typeOrObj, label: "", options: typeOrObj === "choice" || typeOrObj === "checkbox" ? ["", ""] : [] };
+      ? { ...typeOrObj, id: newId }
+      : { id: newId, type: typeOrObj, label: "", options: typeOrObj === "choice" || typeOrObj === "checkbox" ? ["", ""] : [] };
     setQuestions((qs) => [...qs, newQ]);
     setSelectedId(newQ.id);
   };
@@ -538,25 +541,39 @@ export default function BuilderView({
 
   // ── save (draft or publish) ───────────────────────────────────────────────
 
-  const save = (asDraft = false) => {
-    const slug   = Math.random().toString(36).slice(2, 8);
+  const [saving, setSaving] = useState(false);
+
+  const save = async (asDraft = false) => {
+    if (saving) return;
+    setSaving(true);
     const survey = {
-      id:          isEditing ? editingSurvey.id          : "srv_" + Date.now(),
       workspaceId: isEditing ? editingSurvey.workspaceId : activeWorkspace.id,
       title:       title.trim() || t("untitledSurvey"),
       description,
-      submissions: isEditing ? editingSurvey.submissions : 0,
-      endpoint:    isEditing ? editingSurvey.endpoint    : `pulse.sh/r/${slug}`,
       status:      asDraft ? "draft" : "live",
-      createdAt:   isEditing
-        ? editingSurvey.createdAt
-        : new Date().toISOString().slice(0, 10),
       questions,
+      ...(isEditing ? {
+        id:          editingSurvey.id,
+        submissions: editingSurvey.submissions,
+        endpoint:    editingSurvey.endpoint,
+        createdAt:   editingSurvey.createdAt,
+      } : {}),
     };
-    setSavedAsDraft(asDraft);
-    setDeployed(survey);
-    if (isEditing) onUpdateSurvey(survey.id, survey);
-    else           onDeploy(survey);
+    try {
+      let saved;
+      if (isEditing) {
+        await onUpdateSurvey(survey.id, survey);
+        saved = survey;
+      } else {
+        saved = await onDeploy(survey);
+      }
+      setSavedAsDraft(asDraft);
+      setDeployed(saved || survey);
+    } catch (err) {
+      console.error("Save failed:", err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const qCount = questions.length;
@@ -623,13 +640,15 @@ export default function BuilderView({
             {t("cancelBtn")}
           </button>
           {!isEditing && !surveyAtLimit && (
-            <button onClick={() => save(true)} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3.5 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
+            <button onClick={() => save(true)} disabled={saving} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3.5 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 disabled:opacity-50">
               <Save size={13} /> {t("saveDraft")}
             </button>
           )}
-          <button onClick={() => save(false)} disabled={surveyAtLimit} className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">
+          <button onClick={() => save(false)} disabled={surveyAtLimit || saving} className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">
             {surveyAtLimit
               ? <><Lock size={13} /> {t("upgrade")}</>
+              : saving
+              ? <><Loader2 size={13} className="animate-spin" /> {t("saving") || "Saving…"}</>
               : isEditing
               ? <><CheckCircle2 size={13} /> {t("saveChanges")}</>
               : <><Rocket size={13} /> {t("publish")}</>}

@@ -336,6 +336,7 @@ export default function DashboardView({
   onDeleteSurvey,
   onEditSurveyInBuilder,
   onUpdateSurvey,
+  onLoadFeedback,
   mobileOpen,
   setMobileOpen,
   members,
@@ -359,6 +360,10 @@ export default function DashboardView({
     setConfirmDeleteSelected(false);
     setSearchQuery("");
   }, [activeWorkspace.id]);
+
+  useEffect(() => {
+    if (selectedSurveyId && onLoadFeedback) onLoadFeedback(selectedSurveyId);
+  }, [selectedSurveyId]);
 
   const planObj       = getPlan(userPlan);
   const surveyLimit   = planObj.limits.surveys;

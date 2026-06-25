@@ -6,6 +6,7 @@ import {
   Building2,
   Eye,
   EyeOff,
+  Loader2,
   Lock,
   Mail,
   User,
@@ -90,12 +91,13 @@ export default function AuthView({ mode, go, onAuth }) {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   const [showPw, setShowPw]   = useState(false);
+  const [loading, setLoading] = useState(false);
   const [form, setForm]       = useState({ org: "", name: "", email: "", password: "" });
   const [errors, setErrors]   = useState({});
 
   const update = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
     const next = {};
     if (isRegister && !form.org.trim())
@@ -107,12 +109,20 @@ export default function AuthView({ mode, go, onAuth }) {
     if (form.password.length < 8)
       next.password = "Password must be at least 8 characters.";
     setErrors(next);
-    if (Object.keys(next).length === 0) {
-      onAuth({
-        name: form.name || "Avery Chen",
+    if (Object.keys(next).length > 0) return;
+
+    setLoading(true);
+    try {
+      await onAuth({
+        name: form.name || form.email.split("@")[0],
         email: form.email,
+        password: form.password,
         tenantName: isRegister ? form.org : undefined,
       });
+    } catch (err) {
+      setErrors({ submit: err.message || "Something went wrong. Please try again." });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -274,12 +284,19 @@ export default function AuthView({ mode, go, onAuth }) {
               </p>
             )}
 
+            {errors.submit && (
+              <p className="rounded-xl bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-600">
+                {errors.submit}
+              </p>
+            )}
             <button
               type="submit"
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 active:scale-[0.98]"
+              disabled={loading}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isRegister ? "Create account" : "Sign in"}
-              <ArrowRight size={15} />
+              {loading
+                ? <><Loader2 size={15} className="animate-spin" /> {isRegister ? "Creating…" : "Signing in…"}</>
+                : <>{isRegister ? "Create account" : "Sign in"} <ArrowRight size={15} /></>}
             </button>
           </form>
 
