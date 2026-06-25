@@ -7,7 +7,7 @@ export const PLANS = [
     annual: 0,
     responses: "100 responses / mo",
     blurb: "Validate your first feedback loop.",
-    limits: { workspaces: 1, surveys: 1, responses: 100 },
+    limits: { workspaces: 1, surveys: 1, responses: 100, members: 1 },
     features: [
       "1 workspace",
       "1 survey",
@@ -24,7 +24,7 @@ export const PLANS = [
     annual: 63,
     responses: "5,000 responses / mo",
     blurb: "For teams shipping weekly.",
-    limits: { workspaces: 5, surveys: null, responses: 5000 },
+    limits: { workspaces: 5, surveys: null, responses: 5000, members: 5 },
     features: [
       "Up to 5 workspaces",
       "Unlimited surveys",
@@ -43,7 +43,7 @@ export const PLANS = [
     annual: 199,
     responses: "Unlimited responses",
     blurb: "For multi-region, multi-brand orgs.",
-    limits: { workspaces: null, surveys: null, responses: null },
+    limits: { workspaces: null, surveys: null, responses: null, members: null },
     features: [
       "Unlimited workspaces",
       "Unlimited surveys",

@@ -4,7 +4,7 @@ import { ArrowLeft, ArrowRight, Check, CheckCircle2, CreditCard, Loader2, LockIc
 import TextField from "../components/common/TextField";
 import PrimaryButton from "../components/common/PrimaryButton";
 
-export default function CheckoutView({ go, plan, onSubscribed }) {
+export default function CheckoutView({ go, plan, onSubscribed, user }) {
   const planObj = PLANS.find((p) => p.id === plan) || PLANS[1];
   const [stage, setStage] = useState("form"); // form | processing | success
   const [card, setCard] = useState({
@@ -39,7 +39,7 @@ export default function CheckoutView({ go, plan, onSubscribed }) {
       <div className="grid w-full max-w-3xl gap-8 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm sp-rise sm:grid-cols-[1.1fr_1fr]">
         <div>
           <button
-            onClick={() => go("landing")}
+            onClick={() => go(user ? "dashboard" : "landing")}
             className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-700"
           >
             <ArrowLeft size={15} /> Back

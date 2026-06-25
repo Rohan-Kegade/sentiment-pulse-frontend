@@ -12,7 +12,7 @@ export default function Logo({ size = "md" }) {
         <Gauge className="text-white" size={size === "sm" ? 14 : 18} />
       </div>
 
-      <span className={`sp-display font-semibold ${text} text-slate-900`}>
+      <span className={`sp-display font-semibold ${text} text-slate-900 dark:text-white`}>
         SentimentPulse
       </span>
     </div>

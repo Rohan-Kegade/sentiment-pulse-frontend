@@ -1,4 +1,6 @@
 import { useState, useCallback } from "react";
+import { ThemeProvider } from "./context/ThemeContext";
+import { LanguageProvider } from "./context/LanguageContext";
 
 import LandingView from "./views/LandingView";
 import AuthView from "./views/AuthView";
@@ -10,6 +12,7 @@ import PublicSurveyView from "./views/PublicSurveyView";
 import { SEED_WORKSPACES } from "./data/workspaces";
 import { SEED_SURVEYS } from "./data/surveys";
 import { SEED_FEEDBACK } from "./data/feedback";
+import { SEED_MEMBERS } from "./data/members";
 
 import { fontStyles } from "./styles/fonts";
 
@@ -29,7 +32,8 @@ export default function App() {
 
   const [surveys, setSurveys] = useState(SEED_SURVEYS);
   const [feedback] = useState(SEED_FEEDBACK);
-  const [previewSurvey, setPreviewSurvey] = useState(null);
+  const [members, setMembers] = useState(SEED_MEMBERS);
+  const [previewSurvey] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [editingSurvey, setEditingSurvey] = useState(null);
 
@@ -64,10 +68,13 @@ export default function App() {
     setWorkspaces(SEED_WORKSPACES);
     setActiveWorkspaceId(SEED_WORKSPACES[0].id);
     setSurveys(SEED_SURVEYS);
+    setMembers(SEED_MEMBERS);
     setUserPlan("pro");
     setEditingSurvey(null);
     setView("landing");
   };
+
+  const handleUpdateUser = (patch) => setUser((u) => ({ ...u, ...patch }));
 
   const handleSubscribed = (planId) => setUserPlan(planId);
 
@@ -103,6 +110,34 @@ export default function App() {
     setActiveWorkspaceId(id);
   };
 
+  const MEMBER_AVATAR_COLORS = ["indigo", "teal", "amber", "rose", "violet", "slate"];
+
+  const handleInviteMember = ({ email, role }) => {
+    const id = "m_" + Date.now();
+    const colorIdx = members.length % MEMBER_AVATAR_COLORS.length;
+    setMembers((prev) => [
+      ...prev,
+      {
+        id,
+        name: null,
+        email,
+        role,
+        status: "pending",
+        workspaceAccess: null,
+        surveyAccess: null,
+        joinedAt: null,
+        invitedAt: new Date().toISOString().slice(0, 10),
+        avatarColor: MEMBER_AVATAR_COLORS[colorIdx],
+      },
+    ]);
+  };
+
+  const handleUpdateMember = (id, patch) =>
+    setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)));
+
+  const handleRemoveMember = (id) =>
+    setMembers((prev) => prev.filter((m) => m.id !== id));
+
   const handleDeleteWorkspace = (id) => {
     const remaining = workspaces.filter((w) => w.id !== id);
     if (remaining.length === 0) return;
@@ -114,6 +149,7 @@ export default function App() {
   const workspaceProps = {
     user,
     onLogout: handleLogout,
+    onUpdateUser: handleUpdateUser,
     workspaces,
     activeWorkspace,
     onSwitchWorkspace: handleSwitchWorkspace,
@@ -122,9 +158,16 @@ export default function App() {
     userPlan,
     mobileOpen,
     setMobileOpen,
+    members,
+    surveys,
+    onInviteMember: handleInviteMember,
+    onUpdateMember: handleUpdateMember,
+    onRemoveMember: handleRemoveMember,
   };
 
   return (
+    <LanguageProvider>
+    <ThemeProvider>
     <div className="sp-root">
       <style>{fontStyles}</style>
 
@@ -132,7 +175,7 @@ export default function App() {
       {view === "login" && <AuthView mode="login" go={go} onAuth={handleAuth} />}
       {view === "register" && <AuthView mode="register" go={go} onAuth={handleAuth} />}
       {view === "checkout" && (
-        <CheckoutView go={go} plan={selectedPlan} onSubscribed={handleSubscribed} />
+        <CheckoutView go={go} plan={selectedPlan} onSubscribed={handleSubscribed} user={user} />
       )}
       {view === "dashboard" && (
         <DashboardView
@@ -158,26 +201,9 @@ export default function App() {
         <PublicSurveyView go={go} survey={previewSurvey || surveys[0]} />
       )}
 
-      {/* Dev-only view switcher */}
-      <div className="fixed bottom-4 right-4 z-50 hidden rounded-xl border border-slate-200 bg-white/95 p-2 text-xs shadow-lg backdrop-blur sm:flex sm:flex-col sm:gap-1">
-        <span className="px-2 pb-1 font-semibold text-slate-400">Dev view jump</span>
-        {["landing", "login", "register", "checkout", "dashboard", "builder", "public-survey"].map(
-          (v) => (
-            <button
-              key={v}
-              onClick={() => {
-                setPreviewSurvey(surveys[0]);
-                go(v);
-              }}
-              className={`rounded-lg px-2 py-1 text-left transition-colors ${
-                view === v ? "bg-indigo-50 text-indigo-700" : "text-slate-500 hover:bg-slate-50"
-              }`}
-            >
-              {v}
-            </button>
-          ),
-        )}
-      </div>
+
     </div>
+    </ThemeProvider>
+    </LanguageProvider>
   );
 }
