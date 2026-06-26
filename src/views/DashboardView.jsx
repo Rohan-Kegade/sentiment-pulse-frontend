@@ -22,6 +22,7 @@ import {
   Play,
   Plus,
   QrCode,
+  Rocket,
   Search,
   Star,
   Tag,
@@ -387,6 +388,8 @@ export default function DashboardView({
     onUpdateSurvey(s.id, { status: nextStatus });
   };
 
+  const publishSurvey = (s) => onUpdateSurvey(s.id, { status: "live" });
+
   const sidebarProps = {
     active: "dashboard", go, user, onLogout, onUpdateUser, onDeleteAccount, workspaces, activeWorkspace,
     onSwitchWorkspace, onCreateWorkspace, onDeleteWorkspace,
@@ -448,19 +451,28 @@ export default function DashboardView({
                       <Eye size={13} /> {t("preview")}
                     </button>
 
-                    {/* Pause / Resume */}
-                    <button
-                      onClick={() => togglePause(selectedSurvey)}
-                      className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-sm font-medium transition-colors ${
-                        selectedSurvey.status === "paused"
-                          ? "border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100"
-                          : "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
-                      }`}
-                    >
-                      {selectedSurvey.status === "paused"
-                        ? <><Play size={13} className="fill-teal-600 text-teal-600" /> {t("resume")}</>
-                        : <><Pause size={13} /> {t("pause")}</>}
-                    </button>
+                    {/* Publish (draft) / Pause / Resume */}
+                    {selectedSurvey.status === "draft" ? (
+                      <button
+                        onClick={() => publishSurvey(selectedSurvey)}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-teal-200 bg-teal-50 px-3.5 py-2 text-sm font-medium text-teal-700 transition-colors hover:bg-teal-100"
+                      >
+                        <Rocket size={13} /> {t("publish")}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => togglePause(selectedSurvey)}
+                        className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-sm font-medium transition-colors ${
+                          selectedSurvey.status === "paused"
+                            ? "border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100"
+                            : "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
+                        }`}
+                      >
+                        {selectedSurvey.status === "paused"
+                          ? <><Play size={13} className="fill-teal-600 text-teal-600" /> {t("resume")}</>
+                          : <><Pause size={13} /> {t("pause")}</>}
+                      </button>
+                    )}
 
                     {/* Edit */}
                     <button
@@ -700,14 +712,23 @@ export default function DashboardView({
                                     <QrCode size={13} /> {t("qrCode")}
                                   </button>
                                   <div className="border-t border-slate-100 dark:border-slate-700" />
-                                  <button
-                                    onClick={() => { setSurveyMenuId(null); togglePause(s); }}
-                                    className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm hover:bg-slate-50 ${s.status === "paused" ? "text-teal-700" : "text-amber-700"}`}
-                                  >
-                                    {s.status === "paused"
-                                      ? <><Play size={13} className="fill-teal-600 text-teal-600" /> {t("resumeSurvey")}</>
-                                      : <><Pause size={13} /> {t("pauseSurvey")}</>}
-                                  </button>
+                                  {s.status === "draft" ? (
+                                    <button
+                                      onClick={() => { setSurveyMenuId(null); publishSurvey(s); }}
+                                      className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-teal-700 hover:bg-slate-50 dark:hover:bg-slate-700"
+                                    >
+                                      <Rocket size={13} /> {t("publishSurvey")}
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() => { setSurveyMenuId(null); togglePause(s); }}
+                                      className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 ${s.status === "paused" ? "text-teal-700" : "text-amber-700"}`}
+                                    >
+                                      {s.status === "paused"
+                                        ? <><Play size={13} className="fill-teal-600 text-teal-600" /> {t("resumeSurvey")}</>
+                                        : <><Pause size={13} /> {t("pauseSurvey")}</>}
+                                    </button>
+                                  )}
                                   <div className="border-t border-slate-100 dark:border-slate-700" />
                                   <button
                                     onClick={() => { setSurveyMenuId(null); setPendingDeleteId(s.id); }}

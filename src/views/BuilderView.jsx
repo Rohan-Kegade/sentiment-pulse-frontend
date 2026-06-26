@@ -3,6 +3,7 @@ import Sidebar from "../components/layout/Sidebar";
 import { getPlan, atLimit, limitLabel } from "../data/plans";
 import { useLanguage } from "../context/LanguageContext";
 import {
+  AlertCircle,
   AlignLeft,
   ArrowLeft,
   BarChart2,
@@ -543,9 +544,23 @@ export default function BuilderView({
   // ── save (draft or publish) ───────────────────────────────────────────────
 
   const [saving, setSaving] = useState(false);
+  const [validationError, setValidationError] = useState(null);
 
   const save = async (asDraft = false) => {
     if (saving) return;
+
+    if (!title.trim()) {
+      setValidationError(t("titleRequired"));
+      return;
+    }
+    const emptyQIdx = questions.findIndex((q) => !q.label.trim());
+    if (emptyQIdx !== -1) {
+      setValidationError(t("questionRequired", { n: emptyQIdx + 1 }));
+      setSelectedId(questions[emptyQIdx].id);
+      return;
+    }
+    setValidationError(null);
+
     setSaving(true);
     const survey = {
       workspaceId: isEditing ? editingSurvey.workspaceId : activeWorkspace.id,
@@ -656,6 +671,17 @@ export default function BuilderView({
               : <><Rocket size={13} /> {t("publish")}</>}
           </button>
         </div>
+
+        {/* ── Validation error banner ──────────────────────────────────── */}
+        {validationError && (
+          <div className="shrink-0 flex items-center gap-2.5 border-b border-rose-200 bg-rose-50 px-5 py-2.5 text-sm text-rose-700 dark:border-rose-800/50 dark:bg-rose-950/20 dark:text-rose-400">
+            <AlertCircle size={15} className="shrink-0" />
+            <span>{validationError}</span>
+            <button onClick={() => setValidationError(null)} className="ml-auto text-rose-400 hover:text-rose-600 transition-colors">
+              <X size={14} />
+            </button>
+          </div>
+        )}
 
         {/* ── Three-panel body ──────────────────────────────────────────── */}
         <div className="flex flex-1 min-h-0 overflow-hidden">
